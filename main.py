@@ -1,75 +1,54 @@
-from flask import Flask, render_template, request
+# Импорт модулей Flask, SQLAlchemy и datetime
+from flask import Flask, render_template, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-from flask_migrate import Migrate
+from datetime import datetime
 
-
-app = Flask('Furniture store')
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///project.db'
+# Инициализация Flask-приложения и настройка базы данных SQLite
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///visits.db'
 db = SQLAlchemy(app)
-migrate = Migrate(app, db)
 
-
-# products = [
-#     {'prod_name': 'sofa',
-#      'price': 12000,
-#      'in_stock': False,
-#      'id': 0},
-#     {'prod_name': 'table',
-#      'price': 6000,
-#      'in_stock': True,
-#      'id': 1},
-#     {'prod_name': 'chair',
-#      'price': 8000,
-#      'in_stock': False,
-#      'id': 2},
-# ]
-
-
-class Product(db.Model):
+# Модель Visit для таблицы в базе данных
+class Visit(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    prod_name = db.Column(db.String(300))
-    price = db.Column(db.Integer)
-    in_stock = db.Column(db.Boolean, default=True)
+    town = db.Column(db.String(80), nullable=False)
+    visit_date = db.Column(db.Date, nullable=False)
 
     def __repr__(self):
-        return f'Product{self.id}. {self.prod_name} - {self.price} rub.'
+        return f"<Visit: {self.town} on {self.visit_date}>"
 
+# Создание таблиц в базе данных
+with app.app_context():
+    db.create_all()
 
-@app.route('/')
-def main():
-    products = Product.query.all()
-    return render_template('index.html', products_list=products)
+# Маршрут для главной страницы, обрабатывает GET и POST запросы
+@app.route('/', methods=['GET', 'POST'])
+def index():
+    # Обработка POST-запроса
+    if request.method == 'POST':
+        # Добавление нового посещения
+        if 'add_visit' in request.form:
+            town = request.form['town']
+            try:
+                visit_date = datetime.strptime(request.form['visit_date'], '%Y-%m-%d').date()
+                new_visit = Visit(town=town, visit_date=visit_date)
+                db.session.add(new_visit)
+                db.session.commit()
+                return redirect(url_for('index'))
+            except ValueError:
+                error = "Некорректный формат даты (ГГГГ-ММ-ДД)"
+                visits = Visit.query.all()
+                return render_template('index.html', visits=visits, error=error)
+        # Очистка всех записей
+        elif 'clear_all' in request.form:
+            db.session.query(Visit).delete()
+            db.session.commit()
+            return redirect(url_for('index'))
 
+    # Отображение списка посещений для GET-запроса
+    visits = Visit.query.all()
+    return render_template('index.html', visits=visits)
 
-@app.route('/in_stock/<product_id>', methods=['PATCH'])
-def modify_product(product_id):
-    product = Product.query.get(product_id)
-    product.in_stock = request.json['in_stock']
-    db.session.commit()
-    # global products
-    # in_stock = request.json['in_stock']
-    # for product in products:
-    #     if product['id'] == product_id:
-    #         product.update({'in_stock': in_stock})
-    # return 'OK'
-
-
-@app.route('/add', methods=['POST'])
-def add_product():
-    data = request.json
-    product = Product(**data)
-    db.session.add(product)
-    db.session.commit()
-
-    # id_last = products[-1]['id']
-    # id_new = id_last + 1
-    # data['id'] = id_new
-    # products.append(data)
-    return 'OK'
-
-
-
+# Запуск приложения в режиме отладки
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)

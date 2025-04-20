@@ -1,35 +1,139 @@
-<html>
+<!DOCTYPE html>
+<html lang="ru">
 <head>
-    <title>Best store!</title>
-    <script type="text/javascript" src="/static/update.js"></script>
-    <link href="static/store.css" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список посещенных городов</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 1em;
+            text-align: center;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        .container {
+            width: 80%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: #333;
+            border-bottom: 2px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        li:last-child {
+            border-bottom: none;
+        }
+        .add-clear-container {
+            width: 80%;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center; /* Выравнивание кнопок по центру */
+        }
+        .add-container {
+            flex-grow: 1; /* Занимает доступное пространство */
+        }
+        .buttons-row {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end; /* Кнопки вправо */
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 5px;
+        }
+        input[type="text"],
+        input[type="date"] {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        button[type="submit"] {
+            background-color: #5cb85c;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .clear-button {
+            background-color: #ff0000 !important; /* Ярко-красный цвет */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1em;
+        }
+        .error {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
 </head>
-
 <body>
-    <h1>Furniture store:</h1>
-    <h3>Add new product:</h3>
-    <form>
-        <div>
-            <input type="text" name="prod_name" id="prod_name">
-            <label for="prod_name">Product name</label>
+    <div class="header">
+        <h1>Список посещенных городов</h1>
+    </div>
+    <div class="container">
+        <h2>Список городов:</h2>
+        <ul>
+            {% for visit in visits %}
+                <li>{{ visit.town }} - {{ visit.visit_date }}</li>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="add-clear-container">
+        <div class="add-container">
+            <h2>Добавить новый город:</h2>
+            <form method="POST" id="add-form">
+                <input type="hidden" name="add_visit" value="true">
+                <label for="town">Город:</label>
+                <input type="text" id="town" name="town" required>
+                <label for="visit_date">Дата посещения:</label>
+                <input type="date" id="visit_date" name="visit_date" required>
+                <button type="submit">Добавить</button>
+                {% if error %}
+                    <p class="error">{{ error }}</p>
+                {% endif %}
+            </form>
         </div>
-        <div>
-            <input type="number" name="price" id="price">
-            <label for="price">Price (rub.)</label>
-        </div>
-        <button onClick="addProduct()">Add</button>
-    </form>
-    <ul>
-        {% for product in products_list %}
-        <li>
-            <div>
-                <div>{{ product['prod_name'] }}</div>
-                <div>{{ product['price'] }} rub.</div>
-                <input value="{{product['id']}}" onChange="updateProd(this)" name="in_stock" type="checkbox" {% if product.in_stock %} checked {% endif %}>
-                <label for="in_stock">In stock</label>
-            </div>
-        </li>
-        {% endfor %}
-    </ul>
+        <form method="POST" id="clear-form" style="display: inline;">
+            <input type="hidden" name="clear_all" value="true">
+            <button type="submit" class="clear-button">Очистить</button>
+        </form>
+    </div>
 </body>
 </html>
